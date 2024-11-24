@@ -1,6 +1,6 @@
 # ChismeGPT
 
-El sistema `ChismeGPT` es un simulador de procesamiento de mensajes para usuarios pre-pago y pos-pago. Implementa un núcleo transaccional que prioriza mensajes pos-pago y permite hasta 10 mensajes gratuitos para usuarios pre-pago antes de forzar su cambio de plan. Además, el servidor limita la cantidad de mensajes concurrentes que procesa, simulando pérdida de mensajes si se supera este límite.
+El sistema `ChismeGPT` es un simulador de procesamiento de mensajes para usuarios pre-pago y pos-pago. Implementa un núcleo transaccional que prioriza mensajes pos-pago y permite hasta 10 mensajes gratuitos para usuarios pre-pago antes de forzar su cambio de plan. 
 
 ## Funcionalidad
 
