@@ -4,19 +4,18 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <arpa/inet.h>
-#include <semaphore.h> // Incluir la librería de semáforos
-
+#include <semaphore.h> 
 #define SERVER_PORT 8080
 #define BUFFER_SIZE 1024
 #define MAX_CLIENTS 100
 #define POSTPAID 1
 #define PREPAID 0
 #define MAX_PREPAID_MESSAGES 10
-#define MAX_CONCURRENT_MESSAGES 10 // Número máximo de mensajes concurrentes que se pueden procesar
+#define MAX_CONCURRENT_MESSAGES 10
 
 typedef struct {
     int user_id;
-    int type; // 0 = Pre-pago, 1 = Pos-pago
+    int type; 
     char message[BUFFER_SIZE];
 } Message;
 
@@ -27,9 +26,9 @@ int prepaid_count = 0;
 
 pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t queue_cond = PTHREAD_COND_INITIALIZER;
-sem_t semaphore; // Semáforo para limitar la concurrencia
+sem_t semaphore;
 
-int client_id_counter = 1; // Contador para asignar ID único a cada cliente
+int client_id_counter = 1;
 
 void enqueue_message(Message *queue, int *count, Message msg) {
     queue[*count] = msg;
@@ -49,25 +48,22 @@ void *process_messages(void *arg) {
     while (1) {
         pthread_mutex_lock(&queue_mutex);
         
-        // Procesar primero los mensajes post-pago
         if (postpaid_count > 0) {
             Message msg = dequeue_message(postpaid_queue, &postpaid_count);
             pthread_mutex_unlock(&queue_mutex);
             printf("[SERVIDOR] Mensaje del usuario %d: %s\n", msg.user_id, msg.message);
         }
-        // Si no hay mensajes post-pago, procesar los mensajes pre-pago
         else if (prepaid_count > 0) {
             Message msg = dequeue_message(prepaid_queue, &prepaid_count);
             pthread_mutex_unlock(&queue_mutex);
             printf("[SERVIDOR] Mensaje del usuario %d: %s\n", msg.user_id, msg.message);
         }
         else {
-            // Esperar si no hay mensajes en ninguna cola
             pthread_cond_wait(&queue_cond, &queue_mutex);
             pthread_mutex_unlock(&queue_mutex);
         }
 
-        usleep(500000); // Simula tiempo de procesamiento
+        usleep(500000);
     }
     return NULL;
 }
@@ -75,7 +71,7 @@ void *process_messages(void *arg) {
 void *handle_client(void *arg) {
     int client_fd = *((int *)arg);
     char buffer[BUFFER_SIZE];
-    int user_id = client_id_counter++; // Asigna un ID único a cada cliente
+    int user_id = client_id_counter++;
     int type = (rand() % 2 == 0) ? PREPAID : POSTPAID;
     int message_count = 0;
 
@@ -93,10 +89,8 @@ void *handle_client(void *arg) {
             break;
         }
 
-        // Si el cliente notificó el cambio de tipo
         if (strstr(buffer, "Cambio a pos-pago") != NULL) {
             pthread_mutex_lock(&queue_mutex);
-            // Cambiar a pos-pago solo después de procesar todos los mensajes de prepago
             if (type == PREPAID && message_count >= MAX_PREPAID_MESSAGES) {
                 printf("[SERVIDOR] Usuario %d cambiado a Pos-pago.\n", user_id);
                 type = POSTPAID;
@@ -128,13 +122,11 @@ void *handle_client(void *arg) {
 
         pthread_mutex_unlock(&queue_mutex);
 
-        // Controlar la concurrencia: Semáforo para limitar el número de mensajes concurrentes
-        sem_wait(&semaphore); // Espera hasta que haya espacio para procesar más mensajes
+        sem_wait(&semaphore); 
 
-        // Simular el procesamiento del mensaje
-        usleep(500000); // Tiempo de procesamiento (simulado)
+        usleep(500000);
         
-        sem_post(&semaphore); // Libera el semáforo después de procesar el mensaje
+        sem_post(&semaphore);
     }
 
     return NULL;
@@ -146,7 +138,6 @@ int main() {
     struct sockaddr_in server_addr, client_addr;
     socklen_t client_len = sizeof(client_addr);
 
-    // Inicializar el semáforo con el número máximo de mensajes concurrentes
     sem_init(&semaphore, 0, MAX_CONCURRENT_MESSAGES);
 
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -190,7 +181,6 @@ int main() {
 
     close(server_fd);
 
-    // Destruir el semáforo al final del programa
     sem_destroy(&semaphore);
 
     return 0;
